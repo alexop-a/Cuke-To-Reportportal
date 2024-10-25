@@ -1,0 +1,197 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>cuke-to-reportportal</artifactId>
+	<groupId>io.github.alexopa</groupId>
+	<packaging>jar</packaging>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<name>Cuke To ReportPortal</name>
+	<description>A library that reads cucumber json report files and imports
+		them to ReportPortal</description>
+	<url>https://github.com/alexop-a/Cuke-To-Reportportal</url>
+	
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Andreas Alexopoulos</name>
+			<email>alexop.a@gmail.com</email>
+			<organization>alexop-a</organization>
+			<organizationUrl>https://alexop-a.github.io/</organizationUrl>
+		</developer>
+	</developers>
+
+	<properties>
+		<build-helper-plugin.version>3.6.0</build-helper-plugin.version>
+		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+		<maven-javadoc-plugin.verion>3.6.3</maven-javadoc-plugin.verion>
+		<spring-boot.version>3.3.2</spring-boot.version>
+		<lombok.version>1.18.34</lombok.version>
+		<cuke-report-converter.version>1.0.1</cuke-report-converter.version>
+		<reportportal.commons-model.version>5.11.1</reportportal.commons-model.version>
+		<httpclient5.version>5.3.1</httpclient5.version>
+		
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>build-helper-maven-plugin</artifactId>
+			<version>${build-helper-plugin.version}</version>
+			<type>maven-plugin</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		
+<!--		<dependency>-->
+<!--			<groupId>org.projectlombok</groupId>-->
+<!--			<artifactId>lombok</artifactId>-->
+<!--			<version>${lombok.version}</version>-->
+<!--			<scope>compile</scope>-->
+<!--		</dependency>-->
+		<dependency>
+			<artifactId>cuke-report-converter</artifactId>
+			<groupId>io.github.alexop-a</groupId>
+			<version>${cuke-report-converter.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.epam.reportportal</groupId>
+			<artifactId>commons-model</artifactId>
+			<version>${reportportal.commons-model.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+			<version>${httpclient5.version}</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<release>17</release>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven-source-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin.verion}</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+		</plugins>
+	</build>
+	
+	<scm>
+		<url>https://github.com/alexop-a/Cuke-To-Reportportal.git</url>
+		<connection>scm:git:https://github.com/alexop-a/Cuke-To-Reportportal.git</connection>
+		<developerConnection>scm:git:https://github.com/alexop-a/Cuke-To-Reportportal.git</developerConnection>
+		<tag>v@{project.version}</tag>
+	</scm>
+	
+	 <profiles>
+		<profile>
+			<id>github-maven-artifactory</id>
+			<distributionManagement>
+				<repository>
+					<id>github</id>
+					<name>GitHub alexop-a Apache Maven Packages</name>
+					<url>https://maven.pkg.github.com/alexop-a/Cuke-To-Reportportal</url>
+				</repository>
+
+			</distributionManagement>
+
+		</profile>
+
+		<profile>
+			<id>central-maven-artifactory</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>${gpg-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<gpgArguments>
+								<argument>--pinentry-mode</argument>
+								<argument>loopback</argument>
+							</gpgArguments>
+						</configuration>
+					</plugin>
+
+					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>${central-publishing-maven-plugin.version}</version>
+						<extensions>true</extensions>
+						<configuration>
+							<publishingServerId>central</publishingServerId>
+						</configuration>
+					</plugin>
+
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

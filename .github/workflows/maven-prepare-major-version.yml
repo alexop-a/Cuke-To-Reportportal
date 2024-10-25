@@ -1,0 +1,55 @@
+name: Prepare Major Version for Release
+
+on:
+  workflow_dispatch:
+
+env:
+  TRIGGER_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  prepare-major-version-for-release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Create New Version and checkout new branch
+      run: |
+          mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.nextMajorVersion}.0.0 versions:commit
+          export newVersion=v$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          git config user.name ci-build
+          git config user.email 36639026+alexop-a@users.noreply.github.com
+          git checkout -b release/$newVersion
+          git add pom.xml
+          git commit -m "[ci] updated version to $newVersion in pom.xml"
+          git push origin HEAD:release/$newVersion
+
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+
+    - name: Create Git Tag
+      run: |
+          export newVersion=v$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          git config user.name ci-build
+          git config user.email 36639026+alexop-a@users.noreply.github.com
+          git checkout release/$newVersion
+          git tag -a $newVersion -m "$newVersion"
+          git push origin $newVersion
+
+    - name: Update version on $TRIGGER_BRANCH_NAME branch
+      run: |
+          git checkout $TRIGGER_BRANCH_NAME
+          mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.nextMajorVersion}.0.1\${parsedVersion.qualifier?} versions:commit
+          export newVersion=v$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          git config user.name ci-build
+          git config user.email 36639026+alexop-a@users.noreply.github.com
+          git add pom.xml
+          git commit -m "[ci] updated version to $newVersion in pom.xml"
+          git push origin HEAD:$TRIGGER_BRANCH_NAME
+
