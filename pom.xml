@@ -34,9 +34,10 @@
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
 		<maven-javadoc-plugin.verion>3.6.3</maven-javadoc-plugin.verion>
-		<spring-boot.version>3.3.2</spring-boot.version>
+		<spring-boot.version>3.3.5</spring-boot.version>
 		<lombok.version>1.18.34</lombok.version>
-		<cuke-report-converter.version>1.0.2</cuke-report-converter.version>
+		<cuke-report-converter.version>1.0.3</cuke-report-converter.version>
+		<guava.version>33.3.1-jre</guava.version>
 		<reportportal.commons-model.version>5.11.1</reportportal.commons-model.version>
 		<httpclient5.version>5.3.1</httpclient5.version>
 		
@@ -79,6 +80,11 @@
 			<artifactId>cuke-report-converter</artifactId>
 			<groupId>io.github.alexop-a</groupId>
 			<version>${cuke-report-converter.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.google.guava</groupId>
+		    <artifactId>guava</artifactId>
+		    <version>${guava.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.epam.reportportal</groupId>
