@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import com.epam.ta.reportportal.ws.model.launch.Mode;
 
 import io.github.alexopa.cukereportportal.exception.RPImporterException;
+import io.github.alexopa.cukereportportal.util.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -127,7 +128,7 @@ public class RPImporterPropertyHandler {
 
 		URL url = classLoader.getResource(f);
 		if (url != null) {
-			File file = new File(url.getFile());
+			File file = Utils.getFile(url.getFile());
 			FileInputStream propsInput = null;
 			try {
 				propsInput = new FileInputStream(file);
