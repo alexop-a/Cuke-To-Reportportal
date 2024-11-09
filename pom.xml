@@ -6,7 +6,7 @@
 	<artifactId>cuke-to-reportportal</artifactId>
 	<groupId>io.github.alexop-a</groupId>
 	<packaging>jar</packaging>
-	<version>1.0.4-SNAPSHOT</version>
+	<version>1.0.5-SNAPSHOT</version>
 
 	<name>Cuke To ReportPortal</name>
 	<description>A library that reads cucumber json report files and imports
