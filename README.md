@@ -10,7 +10,7 @@ The simplest usage of the library is shown in the following example
 ```
 RPImporterPropertyHandler propertyHandler = new RPImporterPropertyHandler();
 ReportPortalImporter reportPortalImporter = new ReportPortalImporter(propertyHandler);
-reportPortalImporter.importReport();
+reportPortalImporter.importCucumberReports();
 ```
 
 ## Configuration
