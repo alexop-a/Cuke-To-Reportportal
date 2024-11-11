@@ -2,6 +2,15 @@
 
 **Cuke-To-ReportPortal** is a library that is used to import cucumber json report files or `CukeTestRun` reports to ReportPortal. The library used the `cuke-report-converter` [package](https://mvnrepository.com/artifact/io.github.alexop-a/cuke-report-converter) to convert json report files to `CukeTestRun`. The import process supports parallelization over the Features that have to be imported and also on the Scenarios that belong to those features ( see properties below ).
 
+### Installation
+Add the following dependency in pom.xml file
+
+	<dependency>
+		<artifactId>cuke-to-reportportal</artifactId>
+		<groupId>io.github.alexop-a</groupId>
+		<version>1.0.4</version>
+	</dependency>
+ 
 ## Usage
 ### Importing to ReportPortal
 
