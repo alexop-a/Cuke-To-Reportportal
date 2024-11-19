@@ -31,21 +31,21 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-
-import com.epam.ta.reportportal.ws.model.EntryCreatedAsyncRS;
+import org.springframework.util.MimeTypeUtils;
 
 import io.github.alexopa.cukereportconverter.model.cuke.CukeEmbedding;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeScenario;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeStep;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeStepResult;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeStepSection;
-import io.github.alexopa.cukereportportal.client.ReportPortalClient;
-import io.github.alexopa.cukereportportal.client.model.AddFileAttachmentProperties;
-import io.github.alexopa.cukereportportal.client.model.AddLogProperties;
-import io.github.alexopa.cukereportportal.client.model.FinishItemProperties;
-import io.github.alexopa.cukereportportal.client.model.StartItemProperties;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
 import io.github.alexopa.cukereportportal.util.MarkdownUtils;
+import io.github.alexopa.reportportalclient.RPClient;
+import io.github.alexopa.reportportalclient.model.log.AddFileAttachmentProperties;
+import io.github.alexopa.reportportalclient.model.log.AddLogProperties;
+import io.github.alexopa.reportportalclient.model.testitem.FinishTestItemProperties;
+import io.github.alexopa.reportportalclient.model.testitem.StartTestItemProperties;
+import io.github.alexopa.reportportalclient.rpmodel.EntryCreatedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,11 +56,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 class CukeScenarioImporter implements Callable<Boolean> {
 
+	private static final String TMP_FOLDER = "/tmp";
 	private static final String DOCSTRING_DECORATOR = "\n\"\"\"\n";
 
 	private final CukeScenario scenario;
 	private final RPImporterPropertyHandler propertyHandler;
-	private final ReportPortalClient rpClient;
+	private final RPClient rpClient;
 	private final String launchUuid;
 	private final String featureItemUuid;
 	
@@ -69,7 +70,7 @@ class CukeScenarioImporter implements Callable<Boolean> {
 		
 		log.info("Importing scenario: {}", scenario.getName());
 		
-		EntryCreatedAsyncRS scenarioItemId = rpClient.startItem(startScenarioProperties(launchUuid, featureItemUuid, scenario));
+		EntryCreatedResponse scenarioItemId = rpClient.startItem(startScenarioProperties(launchUuid, featureItemUuid, scenario));
 		
 		writeSteps(scenario, scenario.getStartTimestamp(), scenario.getBeforeSteps(), rpClient,
 				launchUuid, scenarioItemId.getId());
@@ -90,25 +91,25 @@ class CukeScenarioImporter implements Callable<Boolean> {
 		return true;
 	}
 
-	private void writeSteps(CukeScenario scenario, LocalDateTime sectionStartTime, List<CukeStep> steps, ReportPortalClient rpClient, String launchUuid, String scenarioUuid) {
+	private void writeSteps(CukeScenario scenario, LocalDateTime sectionStartTime, List<CukeStep> steps, RPClient rpClient, String launchUuid, String scenarioUuid) {
 		if (steps == null || steps.isEmpty()) {
 			return;
 		}
 		
-		EntryCreatedAsyncRS stepsContainerItemId = rpClient.startItem(startStepsContainerProperties(launchUuid, scenarioUuid, steps.get(0), sectionStartTime));
+		EntryCreatedResponse stepsContainerItemId = rpClient.startItem(startStepsContainerProperties(launchUuid, scenarioUuid, steps.get(0), sectionStartTime));
 		
 		for (CukeStep step : steps) {
 			
 			if (step.getBeforeSteps() != null) {
 				for (CukeStep beforeStep: step.getBeforeSteps()) {
-					EntryCreatedAsyncRS beforestepItemId = rpClient
+					EntryCreatedResponse beforestepItemId = rpClient
 							.startItem(startStepProperties(launchUuid, stepsContainerItemId.getId(), beforeStep, sectionStartTime));
 					rpClient.finishItem(finishStepProperties(launchUuid, beforestepItemId.getId(), sectionStartTime, beforeStep.getResult().name()));
 					sectionStartTime = sectionStartTime.plusNanos(beforeStep.getDuration());
 				}
 			}
 			
-			EntryCreatedAsyncRS stepItemId = rpClient
+			EntryCreatedResponse stepItemId = rpClient
 					.startItem(startStepProperties(launchUuid, stepsContainerItemId.getId(), step, sectionStartTime));
 			
 			if (step.getTableData() != null) {
@@ -132,34 +133,36 @@ class CukeScenarioImporter implements Callable<Boolean> {
 			
 			if (step.getEmbeddings() != null) {
 				for (CukeEmbedding embedding: step.getEmbeddings()) {
-					if (embedding.getMimeType().equals("image/png")) {
+					if (MimeTypeUtils.IMAGE_PNG_VALUE.equals(embedding.getMimeType())
+							|| MimeTypeUtils.APPLICATION_JSON_VALUE.equals(embedding.getMimeType())) {
 						
-						byte[] decodedImg = Base64.getDecoder()
+						byte[] decodedData = Base64.getDecoder()
 			                    .decode(embedding.getData().getBytes(StandardCharsets.UTF_8));
-						File tmpImgFile = null;
+						File tmpFile = null;
 						try {
-							tmpImgFile = File.createTempFile("rp_" + embedding.getName().replace(" ", "_") + "_", "_img-attach.png", new File("/tmp"));
-							tmpImgFile.deleteOnExit();
+							tmpFile = File.createTempFile("rp_" + embedding.getName().replace(" ", "_") + "_",
+									"_-attach." + embedding.getMimeType().split("/")[1], new File(TMP_FOLDER));
+							tmpFile.deleteOnExit();
 						} catch (IOException e) {
-							log.error("Could not create tmp file for attachment under /tmp folder:", e);
+							log.error("Could not create tmp file for attachment under {} folder:", e, TMP_FOLDER);
 							continue;
 						}
 						try {
-							Files.write(Paths.get(tmpImgFile.getAbsolutePath()), decodedImg);
+							Files.write(Paths.get(tmpFile.getAbsolutePath()), decodedData);
 						} catch (IOException e) {
-							log.error("Could not write tmp file for attachment under /tmp folder:", e);
+							log.error("Could not write tmp file for attachment under {} folder:", e, TMP_FOLDER);
 							continue;
 						}
 						
 						rpClient.addFileAttachment(AddFileAttachmentProperties.builder().launchUuid(launchUuid)
 								.itemUuid(stepItemId.getId()).level("INFO")
 								.time(Date.from(sectionStartTime.toInstant(ZoneOffset.UTC)))
-								.message(tmpImgFile.getName()).fullPath(tmpImgFile.getAbsolutePath()).build());
-					} else if (embedding.getMimeType().equals("text/plain")) {
+								.message(tmpFile.getName()).fullPath(tmpFile.getAbsolutePath()).build());
+					} else if (MimeTypeUtils.TEXT_PLAIN_VALUE.equals(embedding.getMimeType())
+							) {
 						byte[] decodedData = Base64.getDecoder()
 			                    .decode(embedding.getData().getBytes(StandardCharsets.UTF_8));
 						String text = new String(decodedData);
-						
 						
 						rpClient.addLog(AddLogProperties.builder().launchId(launchUuid).itemId(stepItemId.getId())
 								.level("INFO").time(Date.from(sectionStartTime.toInstant(ZoneOffset.UTC)))
@@ -172,7 +175,7 @@ class CukeScenarioImporter implements Callable<Boolean> {
 
 			if (step.getAfterSteps() != null) {
 				for (CukeStep afterStep: step.getAfterSteps()) {
-					EntryCreatedAsyncRS afterStepItemId = rpClient
+					EntryCreatedResponse afterStepItemId = rpClient
 							.startItem(startStepProperties(launchUuid, stepsContainerItemId.getId(), afterStep, sectionStartTime));
 					rpClient.finishItem(finishStepProperties(launchUuid, afterStepItemId.getId(), sectionStartTime, afterStep.getResult().name()));
 					sectionStartTime = sectionStartTime.plusNanos(afterStep.getDuration());
@@ -188,8 +191,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 		
 	}
 	
-	private StartItemProperties startScenarioProperties(String launchUuid, String featureUuid, CukeScenario scenario) {
-		return StartItemProperties.builder()
+	private StartTestItemProperties startScenarioProperties(String launchUuid, String featureUuid, CukeScenario scenario) {
+		return StartTestItemProperties.builder()
 				.launchUuid(launchUuid)
 				.parentUuid(featureUuid)
 				.name(String.format("%s: %s", scenario.getType().getText(), scenario.getName()))
@@ -201,8 +204,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 				.build();
 	}
 	
-	private FinishItemProperties finishScenarioProperties(String launchUuid, String scenarioUuid, CukeScenario scenario) {
-		return FinishItemProperties.builder()
+	private FinishTestItemProperties finishScenarioProperties(String launchUuid, String scenarioUuid, CukeScenario scenario) {
+		return FinishTestItemProperties.builder()
 				.launchUuid(launchUuid)
 				.itemUuid(scenarioUuid)
 				.endTime(Date.from(scenario.getStartTimestamp().plusNanos(scenario.getTotalDuration()).toInstant(ZoneOffset.UTC)))
@@ -210,8 +213,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 				.build();
 	}
 	
-	private StartItemProperties startStepsContainerProperties(String launchUuid, String scenarioUuid, CukeStep step, LocalDateTime sectionStartTime) {
-		return StartItemProperties.builder()
+	private StartTestItemProperties startStepsContainerProperties(String launchUuid, String scenarioUuid, CukeStep step, LocalDateTime sectionStartTime) {
+		return StartTestItemProperties.builder()
 				.launchUuid(launchUuid)
 				.parentUuid(scenarioUuid)
 				.name(generateStepContainerName(step))
@@ -221,8 +224,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 				.build();
 	}
 	
-	private StartItemProperties startStepProperties(String launchUuid, String scenarioUuid, CukeStep step, LocalDateTime sectionStartTime) {
-		return StartItemProperties.builder()
+	private StartTestItemProperties startStepProperties(String launchUuid, String scenarioUuid, CukeStep step, LocalDateTime sectionStartTime) {
+		return StartTestItemProperties.builder()
 				.launchUuid(launchUuid)
 				.parentUuid(scenarioUuid)
 				.name(generateStepName(step))
@@ -233,8 +236,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 				.build();
 	}
 	
-	private FinishItemProperties finishStepProperties(String launchUuid, String stepUuid, LocalDateTime endTime, String status) {
-		return FinishItemProperties.builder()
+	private FinishTestItemProperties finishStepProperties(String launchUuid, String stepUuid, LocalDateTime endTime, String status) {
+		return FinishTestItemProperties.builder()
 				.launchUuid(launchUuid)
 				.itemUuid(stepUuid)
 				.endTime(Date.from(endTime.toInstant(ZoneOffset.UTC)))

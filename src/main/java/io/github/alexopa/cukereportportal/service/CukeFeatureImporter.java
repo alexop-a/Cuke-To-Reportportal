@@ -27,15 +27,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import com.epam.ta.reportportal.ws.model.EntryCreatedAsyncRS;
-
 import io.github.alexopa.cukereportconverter.model.cuke.CukeFeature;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeScenario;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeScenarioResult;
-import io.github.alexopa.cukereportportal.client.ReportPortalClient;
-import io.github.alexopa.cukereportportal.client.model.FinishItemProperties;
-import io.github.alexopa.cukereportportal.client.model.StartItemProperties;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
+import io.github.alexopa.reportportalclient.RPClient;
+import io.github.alexopa.reportportalclient.model.testitem.FinishTestItemProperties;
+import io.github.alexopa.reportportalclient.model.testitem.StartTestItemProperties;
+import io.github.alexopa.reportportalclient.rpmodel.EntryCreatedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,13 +48,13 @@ class CukeFeatureImporter implements Callable<Boolean> {
 	private final RPImporterPropertyHandler propertyHandler;
 	private final String launchUuid;
 	private final CukeFeature cukeFeature;
-	private final ReportPortalClient rpClient;
+	private final RPClient rpClient;
 
 	@Override
 	public Boolean call() throws Exception {
 		log.info("Importing feature: {}", cukeFeature.getName());
 
-		EntryCreatedAsyncRS featureItemId = rpClient.startItem(startFeatureProperties(launchUuid, cukeFeature));
+		EntryCreatedResponse featureItemId = rpClient.startItem(startFeatureProperties(launchUuid, cukeFeature));
 
 		ExecutorService executorService = Executors.newFixedThreadPool(propertyHandler.getThreadsScenarios());
 		List<Future<Boolean>> listOfScenarios = new ArrayList<>();
@@ -81,16 +80,16 @@ class CukeFeatureImporter implements Callable<Boolean> {
 		return true;
 	}
 
-	private StartItemProperties startFeatureProperties(String launchUuid, CukeFeature feature) {
-		return StartItemProperties.builder().launchUuid(launchUuid)
+	private StartTestItemProperties startFeatureProperties(String launchUuid, CukeFeature feature) {
+		return StartTestItemProperties.builder().launchUuid(launchUuid)
 				.name(String.format("Feature: %s", feature.getName()))
 				.startTime(Date.from(feature.getMinScenarioStartTime().toInstant(ZoneOffset.UTC)))
 				.attributes(feature.getTags().stream().collect(Collectors.joining(";"))).type("STORY")
 				.description(feature.getDescription()).codeRef(feature.getCodeRef()).build();
 	}
 
-	private FinishItemProperties finishFeatureProperties(String launchUuid, String featureUuid, CukeFeature feature) {
-		return FinishItemProperties.builder().launchUuid(launchUuid).itemUuid(featureUuid)
+	private FinishTestItemProperties finishFeatureProperties(String launchUuid, String featureUuid, CukeFeature feature) {
+		return FinishTestItemProperties.builder().launchUuid(launchUuid).itemUuid(featureUuid)
 				.endTime(Date.from(feature.getMaxScenarioEndTime().toInstant(ZoneOffset.UTC)))
 				.status(feature.getScenarios().stream().allMatch(s -> s.getResult() == CukeScenarioResult.PASSED)
 						? "passed"
