@@ -29,18 +29,19 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
-import com.epam.ta.reportportal.ws.model.launch.FinishLaunchRS;
-import com.epam.ta.reportportal.ws.model.launch.StartLaunchRS;
 
 import io.github.alexopa.cukereportconverter.model.cuke.CukeFeature;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeTestRun;
 import io.github.alexopa.cukereportconverter.service.CukeConverter;
-import io.github.alexopa.cukereportportal.client.ReportPortalClient;
-import io.github.alexopa.cukereportportal.client.model.AddFileAttachmentProperties;
-import io.github.alexopa.cukereportportal.client.model.FinishLaunchProperties;
-import io.github.alexopa.cukereportportal.client.model.StartLaunchProperties;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
 import io.github.alexopa.cukereportportal.util.Utils;
+import io.github.alexopa.reportportalclient.RPClient;
+import io.github.alexopa.reportportalclient.config.RPClientConfig;
+import io.github.alexopa.reportportalclient.model.launch.FinishLaunchProperties;
+import io.github.alexopa.reportportalclient.model.launch.StartLaunchProperties;
+import io.github.alexopa.reportportalclient.model.log.AddFileAttachmentProperties;
+import io.github.alexopa.reportportalclient.rpmodel.FinishLaunchResponse;
+import io.github.alexopa.reportportalclient.rpmodel.StartLaunchResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,9 +83,13 @@ public class ReportPortalImporter {
 			return null;
 		}
 
-		ReportPortalClient rpClient = new ReportPortalClient(propertyHandler.getReportPortalProjectName(),
-				propertyHandler.getReportPortalApiKey(), propertyHandler.getReportPortalEndpoint());
-		StartLaunchRS launchRS = rpClient.startLaunch(launchProperties(testRun));
+		RPClientConfig rpClientConfig = new RPClientConfig();
+		rpClientConfig.setEndpoint(propertyHandler.getReportPortalEndpoint());
+		rpClientConfig.setApiKey(propertyHandler.getReportPortalApiKey());
+		rpClientConfig.setProject(propertyHandler.getReportPortalProjectName());
+		RPClient rpClient = new RPClient(rpClientConfig);
+		
+		StartLaunchResponse launchRS = rpClient.startLaunch(launchProperties(testRun));
 		log.info("Importing reports in new launch with uuid {}", launchRS.getId());
 
 		propertyHandler.getLaunchAttachments().stream().filter(StringUtils::isNoneBlank).map(Utils::getFile)
@@ -108,12 +113,13 @@ public class ReportPortalImporter {
 				fut.get();
 			} catch (InterruptedException | ExecutionException e) {
 				log.error("Failed to get result from CukeFeatureImporter", e);
+				Thread.currentThread().interrupt();
 			}
 
 		}
 		executorService.shutdown();
 
-		FinishLaunchRS finishRs = rpClient.finishLaunch(FinishLaunchProperties.builder().launchUuid(launchRS.getId())
+		FinishLaunchResponse finishRs = rpClient.finishLaunch(FinishLaunchProperties.builder().launchUuid(launchRS.getId())
 				.endTime(Date.from(testRun.getEndTime().toInstant(ZoneOffset.UTC))).build());
 
 		log.info("Finishing import of launch {}. Link: {}", launchRS.getId(), finishRs.getLink());

@@ -30,10 +30,9 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import com.epam.ta.reportportal.ws.model.launch.Mode;
-
 import io.github.alexopa.cukereportportal.exception.RPImporterException;
 import io.github.alexopa.cukereportportal.util.Utils;
+import io.github.alexopa.reportportalclient.rpmodel.Mode;
 import lombok.extern.slf4j.Slf4j;
 
 /**
