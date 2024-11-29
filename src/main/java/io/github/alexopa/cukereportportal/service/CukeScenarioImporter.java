@@ -40,6 +40,7 @@ import io.github.alexopa.cukereportconverter.model.cuke.CukeStepResult;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeStepSection;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
 import io.github.alexopa.cukereportportal.util.MarkdownUtils;
+import io.github.alexopa.cukereportportal.util.Utils;
 import io.github.alexopa.reportportalclient.RPClient;
 import io.github.alexopa.reportportalclient.model.log.AddFileAttachmentProperties;
 import io.github.alexopa.reportportalclient.model.log.AddLogProperties;
@@ -197,7 +198,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 				.parentUuid(featureUuid)
 				.name(String.format("%s: %s", scenario.getType().getText(), scenario.getName()))
 				.startTime(Date.from(scenario.getStartTimestamp().toInstant(ZoneOffset.UTC)))
-				.attributes(scenario.getTags().stream().collect(Collectors.joining(";")))
+				.attributes(Utils.enhanceAttributesWithRerun(
+						scenario.getTags().stream().collect(Collectors.joining(";")), propertyHandler))
 				.type("STEP")
 				.description(scenario.getDescription())
 				.codeRef(String.format("%s:%s", scenario.getParent().getCodeRef(), scenario.getLine()))

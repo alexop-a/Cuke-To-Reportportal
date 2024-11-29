@@ -38,4 +38,9 @@ public class RPImporterDefaultValues {
 	 * {@link RPImporterProperties#RP_IMPORTER_THREADS_SCENARIOS} property
 	 */
 	protected static final String DEFAULT_RP_IMPORTER_THREADS_SCENARIOS = "1";
+	
+	protected static final String DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED = "false";
+	
+	protected static final String DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_NAME = "reRun";
+	
 }

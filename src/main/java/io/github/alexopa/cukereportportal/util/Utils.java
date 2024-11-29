@@ -22,14 +22,18 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ResourceUtils;
 
+import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * A utility class
  */
 @Slf4j
+@UtilityClass
 public class Utils {
 
 	/**
@@ -55,5 +59,16 @@ public class Utils {
 			log.error("File {} does not exist. Ignoring.", f);
 			return null;
 		}
+	}
+	
+	public static String enhanceAttributesWithRerun(String attributes, RPImporterPropertyHandler propertyHandler) {
+		if (StringUtils.isNotBlank(propertyHandler.getLaunchRerunOf()) && propertyHandler.isAttributesRerunEnabled()) {
+			if (StringUtils.isBlank(attributes)) {
+				attributes = String.format("%s:%s", propertyHandler.getAttributesRerunName(), "true");
+			} else {
+				attributes = String.format("%s;%s:%s", attributes, propertyHandler.getAttributesRerunName(), "true");
+			}
+		}
+		return attributes;
 	}
 }

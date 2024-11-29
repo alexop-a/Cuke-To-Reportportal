@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
@@ -58,14 +57,31 @@ public class ReportPortalImporter {
 	 * Method that imports cucumber json files to ReportPortal. The report files to
 	 * be imported will be retrieved from the properties
 	 * 
-	 * @return A {@link String} with the launch uuid that was created
+	 * @return A {@link CukeTestRun} with the testrun that was imported
 	 */
-	public String importCucumberReports() {
+	public CukeTestRun importCucumberReports() {
+		CukeTestRun testRun = initCukeTestRun();
+		return importReport(testRun);
+	}
+	
+	public CukeTestRun importCucumberReportsAsReRunOf(CukeTestRun rerunOfTestRun) {
+		CukeTestRun testRun = initCukeTestRun();
+		
+		// we need to set the startTime as the startTime of the initial run
+		testRun.setStartTime(rerunOfTestRun.getStartTime());
+		// we need to set the endTime as the max of endTime of the initial and the rerun
+		testRun.setEndTime(
+				rerunOfTestRun.getEndTime().compareTo(testRun.getEndTime()) >= 0 ? rerunOfTestRun.getEndTime()
+						: testRun.getEndTime());
+		
+		return importReport(testRun);
+	}
+	
+	private CukeTestRun initCukeTestRun() {
 		List<String> jsonReports = propertyHandler.getCucumberJsonFiles();
 		CukeConverter cukeConverter = new CukeConverter();
-		CukeTestRun testRun = cukeConverter.convertToTestRun(
-				jsonReports.stream().map(Utils::getFile).filter(Objects::nonNull).collect(Collectors.toList()));
-		return importReport(testRun);
+		return cukeConverter.convertToTestRun(
+				jsonReports.stream().map(Utils::getFile).filter(Objects::nonNull).toList());		
 	}
 
 	/**
@@ -74,9 +90,9 @@ public class ReportPortalImporter {
 	 * ignored.
 	 * 
 	 * @param testRun The {@link CukeTestRun} instance to import
-	 * @return A {@link String} with the launch uuid that was created
+	 * @return A {@link CukeTestRun} with the testrun that was imported
 	 */
-	public String importReport(CukeTestRun testRun) {
+	public CukeTestRun importReport(CukeTestRun testRun) {
 
 		if (CollectionUtils.isEmpty(testRun.getFeatures())) {
 			log.warn("No feature exists for the test-run. Cannot import...");
@@ -119,20 +135,25 @@ public class ReportPortalImporter {
 		}
 		executorService.shutdown();
 
-		FinishLaunchResponse finishRs = rpClient.finishLaunch(FinishLaunchProperties.builder().launchUuid(launchRS.getId())
-				.endTime(Date.from(testRun.getEndTime().toInstant(ZoneOffset.UTC))).build());
+		FinishLaunchResponse finishRs = rpClient.finishLaunch(FinishLaunchProperties.builder()
+				.launchUuid(launchRS.getId())
+				.endTime(Date.from(testRun.getEndTime().toInstant(ZoneOffset.UTC)))
+				.build());
 
 		log.info("Finishing import of launch {}. Link: {}", launchRS.getId(), finishRs.getLink());
 
-		return launchRS.getId();
+		testRun.setId(launchRS.getId());
+		return testRun;
 	}
 
 	private StartLaunchProperties launchProperties(CukeTestRun testRun) {
 		return StartLaunchProperties.builder().name(propertyHandler.getLaunchName())
 				.description(propertyHandler.getLaunchDescription())
 				.startTime(Date.from(testRun.getStartTime().toInstant(ZoneOffset.UTC)))
-				.attributes(propertyHandler.getLaunchAttributes()).rerunOf(propertyHandler.getLaunchRerunOf())
-				.mode(propertyHandler.getLaunchMode()).build();
+				.attributes(Utils.enhanceAttributesWithRerun(propertyHandler.getLaunchAttributes(), propertyHandler))
+				.rerunOf(propertyHandler.getLaunchRerunOf())
+				.mode(propertyHandler.getLaunchMode())
+				.build();
 	}
 
 }

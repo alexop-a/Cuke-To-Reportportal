@@ -102,7 +102,13 @@ public enum RPImporterProperties {
 	 * Property that defines the ReportPortal instance endpoint, ie:
 	 * <code>https://demo.reportportal.io</code> (without the api path)
 	 */
-	RP_IMPORTER_REPORTPORTAL_ENDPOINT("rp.importer.reportPortal.endpoint", "");
+	RP_IMPORTER_REPORTPORTAL_ENDPOINT("rp.importer.reportPortal.endpoint", ""),
+	
+	RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED("rp.importer.attributes.rerun.enabled",
+			RPImporterDefaultValues.DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED),
+
+	RP_IMPORTER_ATTRIBUTES_RERUN_NAME("rp.importer.attributes.rerun.name",
+			RPImporterDefaultValues.DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_NAME);
 
 	private final String propertyName;
 	private final String defaultValue;
