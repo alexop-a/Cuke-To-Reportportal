@@ -31,6 +31,7 @@ import io.github.alexopa.cukereportconverter.model.cuke.CukeFeature;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeScenario;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeScenarioResult;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
+import io.github.alexopa.cukereportportal.util.Utils;
 import io.github.alexopa.reportportalclient.RPClient;
 import io.github.alexopa.reportportalclient.model.testitem.FinishTestItemProperties;
 import io.github.alexopa.reportportalclient.model.testitem.StartTestItemProperties;
@@ -71,6 +72,7 @@ class CukeFeatureImporter implements Callable<Boolean> {
 				sc.get();
 			} catch (InterruptedException | ExecutionException e) {
 				log.error("Failed to get result from CukeScenarioImporter", e);
+				Thread.currentThread().interrupt();
 			}
 		}
 		executorService.shutdown();
@@ -81,15 +83,22 @@ class CukeFeatureImporter implements Callable<Boolean> {
 	}
 
 	private StartTestItemProperties startFeatureProperties(String launchUuid, CukeFeature feature) {
-		return StartTestItemProperties.builder().launchUuid(launchUuid)
+		return StartTestItemProperties.builder()
+				.launchUuid(launchUuid)
 				.name(String.format("Feature: %s", feature.getName()))
 				.startTime(Date.from(feature.getMinScenarioStartTime().toInstant(ZoneOffset.UTC)))
-				.attributes(feature.getTags().stream().collect(Collectors.joining(";"))).type("STORY")
-				.description(feature.getDescription()).codeRef(feature.getCodeRef()).build();
+				.attributes(Utils.enhanceAttributesWithRerun(
+						feature.getTags().stream().collect(Collectors.joining(";")), propertyHandler))
+				.type("STORY")
+				.description(feature.getDescription())
+				.codeRef(feature.getCodeRef())
+				.build();
 	}
 
 	private FinishTestItemProperties finishFeatureProperties(String launchUuid, String featureUuid, CukeFeature feature) {
-		return FinishTestItemProperties.builder().launchUuid(launchUuid).itemUuid(featureUuid)
+		return FinishTestItemProperties.builder()
+				.launchUuid(launchUuid)
+				.itemUuid(featureUuid)
 				.endTime(Date.from(feature.getMaxScenarioEndTime().toInstant(ZoneOffset.UTC)))
 				.status(feature.getScenarios().stream().allMatch(s -> s.getResult() == CukeScenarioResult.PASSED)
 						? "passed"

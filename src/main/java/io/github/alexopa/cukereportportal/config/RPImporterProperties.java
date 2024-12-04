@@ -102,7 +102,23 @@ public enum RPImporterProperties {
 	 * Property that defines the ReportPortal instance endpoint, ie:
 	 * <code>https://demo.reportportal.io</code> (without the api path)
 	 */
-	RP_IMPORTER_REPORTPORTAL_ENDPOINT("rp.importer.reportPortal.endpoint", "");
+	RP_IMPORTER_REPORTPORTAL_ENDPOINT("rp.importer.reportPortal.endpoint", ""),
+	
+	/**
+	 * Property that defines if we need to add a rerun attribute to
+	 * feature/scenario. In case it is enabled, then the value of
+	 * {@link #RP_IMPORTER_ATTRIBUTES_RERUN_NAME} is added as attribute for feature
+	 * and scenario
+	 */
+	RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED("rp.importer.attributes.rerun.enabled",
+			RPImporterDefaultValues.DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED),
+
+	/**
+	 * Property that defines the rerun attribute name that will be added if
+	 * {@link #RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED} is enabled
+	 */
+	RP_IMPORTER_ATTRIBUTES_RERUN_NAME("rp.importer.attributes.rerun.name",
+			RPImporterDefaultValues.DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_NAME);
 
 	private final String propertyName;
 	private final String defaultValue;

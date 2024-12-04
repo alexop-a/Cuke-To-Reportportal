@@ -22,14 +22,18 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.ResourceUtils;
 
+import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * A utility class
  */
 @Slf4j
+@UtilityClass
 public class Utils {
 
 	/**
@@ -55,5 +59,27 @@ public class Utils {
 			log.error("File {} does not exist. Ignoring.", f);
 			return null;
 		}
+	}
+	
+	/**
+	 * Method that updates the attributes and adds a rerun attribute. In case rerun
+	 * attribute is enabled, then the rerun attribute name is added as a new
+	 * attribute to the existing ones
+	 * 
+	 * @param attributes      A {@link String} with the attributes
+	 * @param propertyHandler A {@link RPImporterPropertyHandler} instance
+	 * 
+	 * @return A {@link String} with the updated attributes
+	 */
+	public static String enhanceAttributesWithRerun(String attributes, RPImporterPropertyHandler propertyHandler) {
+		if (StringUtils.isNotBlank(propertyHandler.getLaunchRerunOf()) && propertyHandler.isRerunAttrbiuteEnabled()) {
+			String rerunAttribute = String.format(":%s", propertyHandler.getRerunAttributeName());
+			if (StringUtils.isBlank(attributes)) {
+				attributes = rerunAttribute;
+			} else {
+				attributes = String.format("%s;%s", attributes, rerunAttribute);
+			}
+		}
+		return attributes;
 	}
 }

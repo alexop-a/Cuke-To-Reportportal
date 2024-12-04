@@ -16,9 +16,12 @@
  */
 package io.github.alexopa.cukereportportal.config;
 
+import lombok.experimental.UtilityClass;
+
 /**
  * Class that defines the default values of the service properties
  */
+@UtilityClass
 public class RPImporterDefaultValues {
 
 	/**
@@ -38,4 +41,17 @@ public class RPImporterDefaultValues {
 	 * {@link RPImporterProperties#RP_IMPORTER_THREADS_SCENARIOS} property
 	 */
 	protected static final String DEFAULT_RP_IMPORTER_THREADS_SCENARIOS = "1";
+	
+	/**
+	 * The default value of
+	 * {@link RPImporterProperties#RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED} property
+	 */
+	protected static final String DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED = "false";
+
+	/**
+	 * The default value of
+	 * {@link RPImporterProperties#RP_IMPORTER_ATTRIBUTES_RERUN_NAME} property
+	 */
+	protected static final String DEFAULT_RP_IMPORTER_ATTRIBUTES_RERUN_NAME = "rerun";
+	
 }

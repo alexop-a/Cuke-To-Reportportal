@@ -17,6 +17,8 @@ package io.github.alexopa.cukereportportal.util;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import lombok.experimental.UtilityClass;
+
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ import static java.util.Optional.ofNullable;
  * 
  * @author Andrei Varabyeu
  */
+@UtilityClass
 public class MarkdownUtils {
 
 	private static final String MARKDOWN_MODE = "!!!MARKDOWN_MODE!!!";
@@ -70,10 +73,10 @@ public class MarkdownUtils {
 
 	private static List<Integer> calculateColSizes(@Nonnull List<List<String>> table) {
 		int tableColNum = table.stream().mapToInt(List::size).max().orElse(-1);
-		List<Iterator<String>> iterList = table.stream().map(List::iterator).collect(Collectors.toList());
-		return IntStream.range(0, tableColNum).mapToObj(
-				n -> iterList.stream().filter(Iterator::hasNext).map(Iterator::next).collect(Collectors.toList()))
-				.map(col -> col.stream().mapToInt(String::length).max().orElse(0)).collect(Collectors.toList());
+		List<Iterator<String>> iterList = table.stream().map(List::iterator).toList();
+		return IntStream.range(0, tableColNum)
+				.mapToObj(n -> iterList.stream().filter(Iterator::hasNext).map(Iterator::next).toList())
+				.map(col -> col.stream().mapToInt(String::length).max().orElse(0)).toList();
 	}
 
 	private static int calculateTableSize(@Nonnull List<Integer> colSizes) {
@@ -86,10 +89,9 @@ public class MarkdownUtils {
 
 	private static <T> List<List<T>> transposeTable(@Nonnull List<List<T>> table) {
 		int tableColNum = table.stream().mapToInt(List::size).max().orElse(-1);
-		List<Iterator<T>> iterList = table.stream().map(List::iterator).collect(Collectors.toList());
-		return IntStream.range(0, tableColNum).mapToObj(
-				n -> iterList.stream().filter(Iterator::hasNext).map(Iterator::next).collect(Collectors.toList()))
-				.collect(Collectors.toList());
+		List<Iterator<T>> iterList = table.stream().map(List::iterator).toList();
+		return IntStream.range(0, tableColNum)
+				.mapToObj(n -> iterList.stream().filter(Iterator::hasNext).map(Iterator::next).toList()).toList();
 	}
 
 	@Nonnull
@@ -115,7 +117,7 @@ public class MarkdownUtils {
 				}
 			}
 		}
-		return colsBySize.stream().sorted(Map.Entry.comparingByValue()).map(Pair::getKey).collect(Collectors.toList());
+		return colsBySize.stream().sorted(Map.Entry.comparingByValue()).map(Pair::getKey).toList();
 	}
 
 	/**
@@ -196,7 +198,7 @@ public class MarkdownUtils {
 		List<List<String>> toFormat = new ArrayList<>();
 		List<String> keys = new ArrayList<>(table.keySet());
 		toFormat.add(keys);
-		toFormat.add(keys.stream().map(table::get).collect(Collectors.toList()));
+		toFormat.add(keys.stream().map(table::get).toList());
 		return formatDataTable(toFormat);
 	}
 
