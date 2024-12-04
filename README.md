@@ -8,7 +8,7 @@ Add the following dependency in pom.xml file
 	<dependency>
 		<artifactId>cuke-to-reportportal</artifactId>
 		<groupId>io.github.alexop-a</groupId>
-		<version>1.0.5</version>
+		<version>1.0.6</version>
 	</dependency>
  
 ## Usage
@@ -36,6 +36,8 @@ The following parameters are available:
 | rp.importer.launch.mode | DEBUG | the mode of the launch (DEBUG/DEFAULT) |
 | rp.importer.threads.features | 1 | the number of threads used in parallel for feature importing |
 | rp.importer.threads.scenarios | 1 | the number of threads used in parallel for scenario importing. This value is applied for any of the feature thread that is running |
+| rp.importer.attributes.rerun.enabled | false | defines if we need to add a rerun attribute to feature/scenario. In case it is enabled, then we add the configured name ( see property below ) as an extra attribute |
+| rp.importer.attributes.rerun.name | rerun | defines the rerun attribute name that will be added if rerun-attribute is enabled |
 | rp.importer.reportPortal.projectName | | the project name on the ReportPortal instance that this launch will be imported |
 | rp.importer.reportPortal.apiKey | | the api key of the project on the ReportPortal instance that this launch will be imported |
 | rp.importer.reportPortal.endpoint | | the ReportPortal instance endpoint without the api path |

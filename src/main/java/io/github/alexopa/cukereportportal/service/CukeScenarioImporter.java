@@ -40,6 +40,7 @@ import io.github.alexopa.cukereportconverter.model.cuke.CukeStepResult;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeStepSection;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
 import io.github.alexopa.cukereportportal.util.MarkdownUtils;
+import io.github.alexopa.cukereportportal.util.Utils;
 import io.github.alexopa.reportportalclient.RPClient;
 import io.github.alexopa.reportportalclient.model.log.AddFileAttachmentProperties;
 import io.github.alexopa.reportportalclient.model.log.AddLogProperties;
@@ -72,18 +73,16 @@ class CukeScenarioImporter implements Callable<Boolean> {
 		
 		EntryCreatedResponse scenarioItemId = rpClient.startItem(startScenarioProperties(launchUuid, featureItemUuid, scenario));
 		
-		writeSteps(scenario, scenario.getStartTimestamp(), scenario.getBeforeSteps(), rpClient,
-				launchUuid, scenarioItemId.getId());
-		writeSteps(scenario, scenario.getStartTimestamp().plusNanos(scenario.getBeforeStepsDuration()),
+		writeSteps(scenario.getStartTimestamp(), scenario.getBeforeSteps(), rpClient, launchUuid,
+				scenarioItemId.getId());
+		writeSteps(scenario.getStartTimestamp().plusNanos(scenario.getBeforeStepsDuration()),
 				scenario.getBackgroundSteps(), rpClient, launchUuid, scenarioItemId.getId());
-		writeSteps(scenario,
+		writeSteps(
 				scenario.getStartTimestamp().plusNanos(scenario.getBeforeStepsDuration())
 						.plusNanos(scenario.getBackgroundStepsDuration()),
 				scenario.getScenarioSteps(), rpClient, launchUuid, scenarioItemId.getId());
-		writeSteps(scenario,
-				scenario.getStartTimestamp().plusNanos(scenario.getBeforeStepsDuration())
-						.plusNanos(scenario.getBackgroundStepsDuration())
-						.plusNanos(scenario.getScenarioStepsDuration()),
+		writeSteps(scenario.getStartTimestamp().plusNanos(scenario.getBeforeStepsDuration())
+				.plusNanos(scenario.getBackgroundStepsDuration()).plusNanos(scenario.getScenarioStepsDuration()),
 				scenario.getAfterSteps(), rpClient, launchUuid, scenarioItemId.getId());
 						
 		rpClient.finishItem(finishScenarioProperties(propertyHandler.getLaunchName(), scenarioItemId.getId(), scenario));
@@ -91,7 +90,7 @@ class CukeScenarioImporter implements Callable<Boolean> {
 		return true;
 	}
 
-	private void writeSteps(CukeScenario scenario, LocalDateTime sectionStartTime, List<CukeStep> steps, RPClient rpClient, String launchUuid, String scenarioUuid) {
+	private void writeSteps(LocalDateTime sectionStartTime, List<CukeStep> steps, RPClient rpClient, String launchUuid, String scenarioUuid) {
 		if (steps == null || steps.isEmpty()) {
 			return;
 		}
@@ -197,7 +196,8 @@ class CukeScenarioImporter implements Callable<Boolean> {
 				.parentUuid(featureUuid)
 				.name(String.format("%s: %s", scenario.getType().getText(), scenario.getName()))
 				.startTime(Date.from(scenario.getStartTimestamp().toInstant(ZoneOffset.UTC)))
-				.attributes(scenario.getTags().stream().collect(Collectors.joining(";")))
+				.attributes(Utils.enhanceAttributesWithRerun(
+						scenario.getTags().stream().collect(Collectors.joining(";")), propertyHandler))
 				.type("STEP")
 				.description(scenario.getDescription())
 				.codeRef(String.format("%s:%s", scenario.getParent().getCodeRef(), scenario.getLine()))

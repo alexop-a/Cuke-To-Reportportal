@@ -278,12 +278,46 @@ public class RPImporterPropertyHandler {
 	public String getReportPortalEndpoint() {
 		return props.getProperty(RPImporterProperties.RP_IMPORTER_REPORTPORTAL_ENDPOINT.getPropertyName());
 	}
+	
+	/**
+	 * Returns value of
+	 * {@link RPImporterProperties#RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED} property
+	 * 
+	 * @return a <code>boolean</code> with the value of
+	 *         {@link RPImporterProperties#RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED}
+	 *         property
+	 */
+	public boolean isRerunAttrbiuteEnabled() {
+		return getPropertyAsBoolean(RPImporterProperties.RP_IMPORTER_ATTRIBUTES_RERUN_ENABLED);
+	}
 
+	/**
+	 * Returns value of
+	 * {@link RPImporterProperties#RP_IMPORTER_ATTRIBUTES_RERUN_NAME} property
+	 * 
+	 * @return a {@link String} with the value of
+	 *         {@link RPImporterProperties#RP_IMPORTER_ATTRIBUTES_RERUN_NAME}
+	 *         property
+	 */
+	public String getRerunAttributeName() {
+		return getPropertyAsString(RPImporterProperties.RP_IMPORTER_ATTRIBUTES_RERUN_NAME);
+	}
+
+	private String getPropertyAsString(RPImporterProperties prop) {
+		String value = props.getProperty(prop.getPropertyName());
+		return Optional.ofNullable(value).orElse(prop.getDefaultValue());
+	}
+	
 	private int getPropertyAsInteger(RPImporterProperties prop) {
 		String value = props.getProperty(prop.getPropertyName());
 		return null != value ? Integer.valueOf(value) : Integer.valueOf(prop.getDefaultValue());
 	}
 
+	private boolean getPropertyAsBoolean(RPImporterProperties prop) {
+		String value = props.getProperty(prop.getPropertyName());
+		return null != value ? Boolean.valueOf(value) : Boolean.valueOf(prop.getDefaultValue());
+	}
+	
 	private List<String> getPropertyAsList(RPImporterProperties prop) {
 		String value = props.getProperty(prop.getPropertyName());
 		return null != value ? Arrays.asList(value.split(";")) : Collections.emptyList();
