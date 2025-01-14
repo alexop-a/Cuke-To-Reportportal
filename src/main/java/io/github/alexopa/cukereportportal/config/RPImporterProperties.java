@@ -71,6 +71,8 @@ public enum RPImporterProperties {
 	 */
 	RP_IMPORTER_LAUNCH_MODE("rp.importer.launch.mode", RPImporterDefaultValues.DEFAULT_RP_IMPORTER_LAUNCH_MODE),
 
+//	RP_IMPORTER_LAUNCH_STATUS("rp.importer.launch.status", ""),
+	
 	/**
 	 * Property that defines the number of threads used in parallel for feature
 	 * importing.

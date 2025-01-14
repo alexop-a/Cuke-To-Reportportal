@@ -16,31 +16,41 @@
  */
 package io.github.alexopa.cukereportportal.service;
 
+import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import io.github.alexopa.cukereportconverter.model.cuke.CukeFeature;
+import io.github.alexopa.cukereportconverter.model.cuke.CukeMetadata;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeTestRun;
 import io.github.alexopa.cukereportconverter.service.CukeConverter;
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
 import io.github.alexopa.cukereportportal.util.Utils;
 import io.github.alexopa.reportportalclient.RPClient;
 import io.github.alexopa.reportportalclient.config.RPClientConfig;
+import io.github.alexopa.reportportalclient.exception.ReportPortalClientException;
 import io.github.alexopa.reportportalclient.model.launch.FinishLaunchProperties;
+import io.github.alexopa.reportportalclient.model.launch.FinishLaunchProperties.FinishLaunchPropertiesBuilder;
 import io.github.alexopa.reportportalclient.model.launch.StartLaunchProperties;
 import io.github.alexopa.reportportalclient.model.log.AddFileAttachmentProperties;
 import io.github.alexopa.reportportalclient.rpmodel.FinishLaunchResponse;
+import io.github.alexopa.reportportalclient.rpmodel.LaunchStatus;
 import io.github.alexopa.reportportalclient.rpmodel.StartLaunchResponse;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.RetryRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,11 +58,30 @@ import lombok.extern.slf4j.Slf4j;
  * Class that is used to import cucumber json reports to ReportPortal
  */
 @Slf4j
-@RequiredArgsConstructor
 public class ReportPortalImporter {
 
 	private final RPImporterPropertyHandler propertyHandler;
+	private final Retry finishLaunchRetry;
+	
+	public ReportPortalImporter(final RPImporterPropertyHandler propertyHandler) {
+		this.propertyHandler = propertyHandler;
+		
+		RetryConfig retryConfig = RetryConfig.custom()
+				.maxAttempts(2)
+				.waitDuration(Duration.ofSeconds(1))
+				.retryExceptions(ReportPortalClientException.class)
+				.build();
+		RetryRegistry registry = RetryRegistry.of(retryConfig);
+		
+		finishLaunchRetry = registry.retry("finishLaucnh");
+	}
 
+	public CukeTestRun importCucumberReports(CukeMetadata metadata) {
+		CukeTestRun testRun = initCukeTestRun();
+		testRun.setMetadata(metadata);
+		return importReport(testRun);
+	}
+	
 	/**
 	 * Method that imports cucumber json files to ReportPortal. The report files to
 	 * be imported will be retrieved from the properties
@@ -60,8 +89,7 @@ public class ReportPortalImporter {
 	 * @return A {@link CukeTestRun} with the testrun that was imported
 	 */
 	public CukeTestRun importCucumberReports() {
-		CukeTestRun testRun = initCukeTestRun();
-		return importReport(testRun);
+		return importCucumberReports(new CukeMetadata());
 	}
 	
 	/**
@@ -81,6 +109,7 @@ public class ReportPortalImporter {
 		testRun.setEndTime(
 				rerunOfTestRun.getEndTime().compareTo(testRun.getEndTime()) >= 0 ? rerunOfTestRun.getEndTime()
 						: testRun.getEndTime());
+		testRun.setMetadata(rerunOfTestRun.getMetadata());
 		
 		return importReport(testRun);
 	}
@@ -127,7 +156,8 @@ public class ReportPortalImporter {
 		List<Future<Boolean>> listOfFuture = new ArrayList<>();
 
 		for (CukeFeature f : testRun.getFeatures()) {
-			CukeFeatureImporter cukeFeatureImporter = new CukeFeatureImporter(propertyHandler, launchRS.getId(), f,
+			CukeFeatureImporter cukeFeatureImporter = new CukeFeatureImporter(
+					Optional.ofNullable(testRun.getMetadata().getName()), propertyHandler, launchRS.getId(), f,
 					rpClient);
 			listOfFuture.add(executorService.submit(cukeFeatureImporter));
 		}
@@ -143,14 +173,21 @@ public class ReportPortalImporter {
 		}
 		executorService.shutdown();
 
-		FinishLaunchResponse finishRs = rpClient.finishLaunch(FinishLaunchProperties.builder()
+		FinishLaunchPropertiesBuilder finishPropsBuiler = FinishLaunchProperties.builder()
 				.launchUuid(launchRS.getId())
-				.endTime(Date.from(testRun.getEndTime().toInstant(ZoneOffset.UTC)))
-				.build());
-
+				.endTime(Date.from(testRun.getEndTime().toInstant(ZoneOffset.UTC)));
+		Optional.ofNullable(testRun.getMetadata().getStatus())
+				.ifPresent(s -> finishPropsBuiler.status(LaunchStatus.valueOf(s)));
+		
+		//finishLaunchRetry.executeCallable(null)
+		Supplier<FinishLaunchResponse> finishLaunchSupplier = () -> rpClient.finishLaunch(finishPropsBuiler.build());
+		Supplier<FinishLaunchResponse> retryingFinishLaunchSupplier = Retry.decorateSupplier(finishLaunchRetry, finishLaunchSupplier);
+		
+//		FinishLaunchResponse finishRs = rpClient.finishLaunch(finishPropsBuiler.build());
+		FinishLaunchResponse finishRs = retryingFinishLaunchSupplier.get();
 		log.info("Finishing import of launch {}. Link: {}", launchRS.getId(), finishRs.getLink());
 
-		testRun.setId(launchRS.getId());
+		testRun.getMetadata().setId(launchRS.getId());
 		return testRun;
 	}
 

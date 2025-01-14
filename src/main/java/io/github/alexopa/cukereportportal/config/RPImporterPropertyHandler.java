@@ -30,8 +30,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
+
 import io.github.alexopa.cukereportportal.exception.RPImporterException;
 import io.github.alexopa.cukereportportal.util.Utils;
+import io.github.alexopa.reportportalclient.rpmodel.LaunchStatus;
 import io.github.alexopa.reportportalclient.rpmodel.Mode;
 import lombok.extern.slf4j.Slf4j;
 
@@ -116,18 +119,29 @@ public class RPImporterPropertyHandler {
 
 		Properties propsFromFile = new Properties();
 
-		ClassLoader classLoader = getClass().getClassLoader();
+//		ClassLoader classLoader = getClass().getClassLoader();
+//
+//		InputStream inStream = null;
+//		inStream = classLoader.getResourceAsStream(f);
+//		if (inStream == null) {
+//			log.warn("{} file is missing.", f);
+//			return propsFromFile;
+//		}
 
-		InputStream inStream = null;
-		inStream = classLoader.getResourceAsStream(f);
-		if (inStream == null) {
-			log.warn("{} file is missing.", f);
-			return propsFromFile;
-		}
-
-		URL url = classLoader.getResource(f);
-		if (url != null) {
-			File file = Utils.getFile(url.getFile());
+//		URL url = classLoader.getResource(f);
+//		log.info("url:{}", url);
+//		if (url != null) {
+//			String tmpF = url.getFile();
+//			log.info("tmpF: {}", tmpF);
+			//if (tmpF.startsWith("jar:")) {
+//				tmpF = tmpF.split("!\\/")[1];
+//			}
+//			log.info("tmpF: {}", tmpF);
+//			File file = Utils.getFile(url.getFile());
+			File file = Utils.getFile(f);
+			if (file == null) {
+				return propsFromFile;
+			}
 			FileInputStream propsInput = null;
 			try {
 				propsInput = new FileInputStream(file);
@@ -139,7 +153,7 @@ public class RPImporterPropertyHandler {
 			} catch (IOException e) {
 				throw new RPImporterException(String.format("Failed to process properties file %s", f));
 			}
-		}
+//		}
 
 		return propsFromFile;
 	}
@@ -220,6 +234,14 @@ public class RPImporterPropertyHandler {
 	public Mode getLaunchMode() {
 		return Mode.valueOf(props.getProperty(RPImporterProperties.RP_IMPORTER_LAUNCH_MODE.getPropertyName()));
 	}
+	/*
+	public LaunchStatus getLaunchStatus() {
+		return StringUtils
+				.isNotBlank(props.getProperty(RPImporterProperties.RP_IMPORTER_LAUNCH_STATUS.getPropertyName()))
+						? LaunchStatus.valueOf(
+								props.getProperty(RPImporterProperties.RP_IMPORTER_LAUNCH_STATUS.getPropertyName()))
+						: null;
+	}*/
 
 	/**
 	 * Returns value of {@link RPImporterProperties#RP_IMPORTER_THREADS_FEATURES}
