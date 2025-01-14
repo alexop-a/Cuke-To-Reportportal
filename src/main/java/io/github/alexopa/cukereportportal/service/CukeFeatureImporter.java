@@ -20,12 +20,15 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+
+import org.slf4j.MDC;
 
 import io.github.alexopa.cukereportconverter.model.cuke.CukeFeature;
 import io.github.alexopa.cukereportconverter.model.cuke.CukeScenario;
@@ -46,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor 
 class CukeFeatureImporter implements Callable<Boolean> {
 
+	private final Optional<String> name;
 	private final RPImporterPropertyHandler propertyHandler;
 	private final String launchUuid;
 	private final CukeFeature cukeFeature;
@@ -53,6 +57,7 @@ class CukeFeatureImporter implements Callable<Boolean> {
 
 	@Override
 	public Boolean call() throws Exception {
+		name.ifPresent(n -> MDC.put("ctx.ctr.name", n));
 		log.info("Importing feature: {}", cukeFeature.getName());
 
 		EntryCreatedResponse featureItemId = rpClient.startItem(startFeatureProperties(launchUuid, cukeFeature));
@@ -61,8 +66,8 @@ class CukeFeatureImporter implements Callable<Boolean> {
 		List<Future<Boolean>> listOfScenarios = new ArrayList<>();
 
 		for (CukeScenario scenario : cukeFeature.getScenarios()) {
-			CukeScenarioImporter cukeScenarioImporter = new CukeScenarioImporter(scenario, propertyHandler, rpClient,
-					launchUuid, featureItemId.getId());
+			CukeScenarioImporter cukeScenarioImporter = new CukeScenarioImporter(name, scenario, propertyHandler,
+					rpClient, launchUuid, featureItemId.getId());
 			listOfScenarios.add(executorService.submit(cukeScenarioImporter));
 		}
 

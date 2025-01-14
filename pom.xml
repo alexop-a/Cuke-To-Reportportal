@@ -34,10 +34,10 @@
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
 		<maven-javadoc-plugin.verion>3.6.3</maven-javadoc-plugin.verion>
-		<spring-boot.version>3.3.5</spring-boot.version>
+		<spring-boot.version>3.3.8</spring-boot.version>
 		<lombok.version>1.18.34</lombok.version>
-		<cuke-report-converter.version>1.0.4</cuke-report-converter.version>
-		<report-portal-client.version>1.0.1</report-portal-client.version>
+		<cuke-report-converter.version>1.0.5</cuke-report-converter.version>
+		<report-portal-client.version>1.0.2</report-portal-client.version>
 		<guava.version>33.3.1-jre</guava.version>
 
 		<gpg-plugin.version>3.2.2</gpg-plugin.version>

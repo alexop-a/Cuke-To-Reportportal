@@ -26,11 +26,13 @@ import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 import org.springframework.util.MimeTypeUtils;
 
 import io.github.alexopa.cukereportconverter.model.cuke.CukeEmbedding;
@@ -60,6 +62,7 @@ class CukeScenarioImporter implements Callable<Boolean> {
 	private static final String TMP_FOLDER = "/tmp";
 	private static final String DOCSTRING_DECORATOR = "\n\"\"\"\n";
 
+	private final Optional<String> name;
 	private final CukeScenario scenario;
 	private final RPImporterPropertyHandler propertyHandler;
 	private final RPClient rpClient;
@@ -68,6 +71,7 @@ class CukeScenarioImporter implements Callable<Boolean> {
 	
 	@Override
 	public Boolean call() throws Exception {
+		name.ifPresent(n -> MDC.put("ctx.ctr.name", n));
 		
 		log.info("Importing scenario: {}", scenario.getName());
 		

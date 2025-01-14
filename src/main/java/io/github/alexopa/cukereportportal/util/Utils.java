@@ -18,11 +18,15 @@ package io.github.alexopa.cukereportportal.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.nio.file.InvalidPathException;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.util.ResourceUtils;
 
 import io.github.alexopa.cukereportportal.config.RPImporterPropertyHandler;
@@ -44,21 +48,48 @@ public class Utils {
 	 * @return A {@link File} from the input parameter
 	 */
 	public static File getFile(String f) {
-		try {
-			Path p = Paths.get(f);
-			if (p.isAbsolute()) {
+		
+		// check if it is an absolute path
+		Path p = Paths.get(f);
+		if (p.isAbsolute()) {
+			try {
 				File optionalFile = ResourceUtils.getFile(f);
 				if (optionalFile.exists()) {
 					return optionalFile;
 				}
-				throw new FileNotFoundException(f);
-			} else {
-				return ResourceUtils.getFile("classpath:" + f);
+			} catch (FileNotFoundException e) {
+				// do nothing
 			}
-		} catch (FileNotFoundException | InvalidPathException e) {
+			// if it is absolute path and not found, return null
 			log.error("File {} does not exist. Ignoring.", f);
 			return null;
 		}
+        // Load the resource
+        Resource resource = new ClassPathResource(f);
+        if (!resource.exists()) {
+        	log.error("File {} does not exist. Ignoring", f);
+            return null;
+        }
+        // If the resource exists as a file on the filesystem (non-JAR case)
+        try {
+            return resource.getFile(); // This works only in non-JAR environments
+        } catch (Exception e) {
+            // Ignore and proceed to handle the JAR case
+        }
+        
+        try {
+	        // For JAR execution, copy the resource to a temporary file
+	        File tempFile = Files.createTempFile("temp", resource.getFilename()).toFile();
+	        tempFile.deleteOnExit();
+	        try (FileOutputStream out = new FileOutputStream(tempFile)) {
+				IOUtils.copy(resource.getInputStream(), out);
+			}
+	        // Return the temporary file
+	        return tempFile;
+        } catch (Exception e) {
+        	log.error("Failed to get file {}. Ignoring.", f, e);
+			return null;
+        }
 	}
 	
 	/**

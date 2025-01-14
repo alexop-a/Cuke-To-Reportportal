@@ -22,6 +22,18 @@ ReportPortalImporter reportPortalImporter = new ReportPortalImporter(propertyHan
 reportPortalImporter.importCucumberReports();
 ```
 
+### CukeMetadata
+
+You can also pass a `CukeMetadata` instance when importing the cucumber reports:
+
+```
+reportPortalImporter.importCucumberReports(cukeMetadata);
+```
+
+- name: if `name` field is provided, then this is set in `ctx.ctr.name` property of MDC
+- status: if `status` field is provided, then is will be set as the final launch status
+- id: the `id` is set on finish launch with the uuid of the report-portal launch after import
+
 ## Configuration
 
 The following parameters are available:
@@ -42,9 +54,14 @@ The following parameters are available:
 | rp.importer.reportPortal.apiKey | | the api key of the project on the ReportPortal instance that this launch will be imported |
 | rp.importer.reportPortal.endpoint | | the ReportPortal instance endpoint without the api path |
 
-The above properties are initializeed by the `RPImporterPropertyHandler` class. The properties can be initialized in the following ways:
+The above properties are initialized by the `RPImporterPropertyHandler` class. The properties can be initialized in the following ways:
 - reading properties from a properties file, either the default (`rp-cucumber-import.properties`) or from any other provided in the appropriate constructor
 - supplying a `Properties` object
 - by combining any of the above
 
 *Note:* In case that both a properties file and the `Properties` object are used, then the values of the Properties object takes precedence over those  in the file.
+
+### Log Context
+The library sets in the `MDC` context a name for the import. This name will be set from the `name` field of the `CukeMetadata`. 
+If you want to use it in logback configuration, you need to use `ctx.ctr.name` property of MDC.
+
