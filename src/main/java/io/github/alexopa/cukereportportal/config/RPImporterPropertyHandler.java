@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -116,29 +114,17 @@ public class RPImporterPropertyHandler {
 
 		Properties propsFromFile = new Properties();
 
-		ClassLoader classLoader = getClass().getClassLoader();
-
-		InputStream inStream = null;
-		inStream = classLoader.getResourceAsStream(f);
-		if (inStream == null) {
-			log.warn("{} file is missing.", f);
+		File file = Utils.getFile(f);
+		if (file == null) {
 			return propsFromFile;
 		}
 
-		URL url = classLoader.getResource(f);
-		if (url != null) {
-			File file = Utils.getFile(url.getFile());
-			FileInputStream propsInput = null;
-			try {
-				propsInput = new FileInputStream(file);
-			} catch (FileNotFoundException e) {
-				throw new RPImporterException(String.format("Failed to read properties file %s", f));
-			}
-			try {
-				propsFromFile.load(propsInput);
-			} catch (IOException e) {
-				throw new RPImporterException(String.format("Failed to process properties file %s", f));
-			}
+		try (FileInputStream propsInput = new FileInputStream(file)) {
+			propsFromFile.load(propsInput);
+		} catch (FileNotFoundException e) {
+			throw new RPImporterException(String.format("Failed to read properties file %s", f));
+		} catch (IOException e) {
+			throw new RPImporterException(String.format("Failed to process properties file %s", f));
 		}
 
 		return propsFromFile;
