@@ -8,7 +8,7 @@ Add the following dependency in pom.xml file
 	<dependency>
 		<artifactId>cuke-to-reportportal</artifactId>
 		<groupId>io.github.alexop-a</groupId>
-		<version>1.0.6</version>
+		<version>1.0.7</version>
 	</dependency>
  
 ## Usage
